@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"runtime"
 	"sync"
 	"time"
 
@@ -40,14 +41,22 @@ func PingContext(ctx context.Context) (err error) {
 }
 
 func main() {
+	slog.SetDefault(slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{AddSource: true, Level: slog.LevelInfo})))
+	slog.Info(`Go`, `Version`, runtime.Version(), `OS`, runtime.GOOS, `ARCH`, runtime.GOARCH, `now`, time.Now(), `Local`, time.Local)
+
 	connStr := os.Getenv(`MY_ORACLE_DSN`)
 	err := Setup(connStr)
 	if err != nil {
 		slog.Error(`msg`, `Err`, err)
 		return
 	}
+
 	var ctx = context.Background()
-	PingContext(ctx)
+	err = PingContext(ctx)
+	if err != nil {
+		slog.Error(`msg`, `Err`, err)
+		return
+	}
 
 	poolSize := 5
 	pool, err := NewConnectionPool("oracle", connStr, poolSize)
